@@ -3,7 +3,7 @@
 #include <string.h>
 #include <regex.h>
 #include <stdbool.h>
-#include "../include/day2_part1.h"
+#include "../include/day2_part2.h"
 
 int main(int argc, char *argv[])
 {
@@ -37,15 +37,13 @@ int main(int argc, char *argv[])
         
         printf("%s", line);     
 
-        bool possible = check_game(line, 12, 13, 14);       
+        max_colors max_colors = get_max_colors(line);
 
-        if(possible) 
-        {
-            total = total + game;
-            printf("game %d is possible. total=%d\n\n", game, total);
-        } else {
-            printf("game %d is not possible. total=%d\n\n", game, total);
-        }
+        printf("max_red: %d, max_green: %d, max_blue: %d\n", max_colors.max_red, max_colors.max_green, max_colors.max_blue);
+        int power = max_colors.max_red * max_colors.max_green * max_colors.max_blue;
+        printf("power: %d\n\n", power);
+
+        total += power;
     }
 
     printf("Total: %d\n", total);
@@ -57,7 +55,7 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-bool check_game(char *line, int max_red, int max_green, int max_blue)
+max_colors get_max_colors(char *line)
 {
     regex_t regex;
     int ret_value;
@@ -65,11 +63,16 @@ bool check_game(char *line, int max_red, int max_green, int max_blue)
     size_t max_groups = 2;
     regmatch_t group_array[max_groups];
 
+    max_colors max_colors;
+    max_colors.max_red = 0;
+    max_colors.max_green = 0;
+    max_colors.max_blue = 0;
+
     char *cubes_revealed_str = strstr(line, ": ");
     cubes_revealed_str += 2; // Skip past the ": "
 
-    ret_value = regcomp(&regex, "([^;]+)", REG_EXTENDED);    
-    
+    ret_value = regcomp(&regex, "([^;]+)", REG_EXTENDED);
+
     char *cursor = cubes_revealed_str;
     while (!regexec(&regex, cursor, max_groups, group_array, 0)) {
         int start = group_array[1].rm_so;
@@ -81,23 +84,23 @@ bool check_game(char *line, int max_red, int max_green, int max_blue)
         
         int cube_count_red = get_cube_count(match, "red");
         int cube_count_green = get_cube_count(match, "green");
-        int cube_count_blue = get_cube_count(match, "blue");        
+        int cube_count_blue = get_cube_count(match, "blue");
 
-        if (cube_count_red > max_red) {
-            return false;
+        if(cube_count_red > max_colors.max_red) {
+            max_colors.max_red = cube_count_red;
         }
 
-        if (cube_count_green > max_green) {
-            return false;
+        if(cube_count_green > max_colors.max_green) {
+            max_colors.max_green = cube_count_green;
         }
-        
-        if (cube_count_blue > max_blue) {
-            return false;
-        }        
+
+        if(cube_count_blue > max_colors.max_blue) {
+            max_colors.max_blue = cube_count_blue;
+        }
     }
 
     regfree(&regex);
-    return true;
+    return max_colors;
 }
 
 int get_cube_count(char *line, char *color)
